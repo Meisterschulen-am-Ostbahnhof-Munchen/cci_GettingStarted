@@ -15,6 +15,7 @@ set(COMPONENT_SRCS
   "../AppIso/AppMemAccess.cpp"
   "../AppCommon/AppOutput.c"
   "../Samples/AddOn/AppIso_Output.c"
+  "../Settings/settingsNVS.cpp"
 )
 
 set(COMPONENT_ADD_INCLUDEDIRS 
