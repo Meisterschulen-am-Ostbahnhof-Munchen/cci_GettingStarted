@@ -16,14 +16,14 @@ using namespace std;
 #if defined(_MSC_VER )
 #pragma warning(disable : 4996)
 #endif // defined(_MSC_VER )
-#if defined(linux)
+#if 1
 #define vswprintf_s swprintf
 #define vsprintf_s snprintf
 #define _strtoui64 strtoull
 #define vswprintf_s swprintf
 #define vsprintf_s snprintf
 #define sprintf_s snprintf
-#endif // defined(linux)
+#endif // 1
 
 #if defined(linux)
 #define USE_L_FOR_64BIT
@@ -205,6 +205,7 @@ int getAuxAssignment(const char auxSection[], VT_AUXAPP_T asAuxAss[])
    return (int)idxAux;
 }
 
+#define USE_LL_FOR_64BIT
 bool parseAuxEntry(char* entry, VT_AUXAPP_T* auxEntry)
 {
     int wObjID_Fun;
@@ -257,11 +258,13 @@ void setAuxAssignment(const char section[], VT_AUXAPP_T asAuxAss[], iso_s16 iNum
       sprintf_s(key, sizeof(key), "%d", auxEntry->wObjID_Fun);
       uint64_t name = 0;
       memcpy(&name, &auxEntry->baAuxName[0], 8);            /* ISO name of the auxiliary input device. The bytes must be set to 0xFF if not used. */
-#if defined(linux)
+#if defined(USE_L_FOR_64BIT)
       sprintf_s(buffer, sizeof(buffer), "%d,%d,%d,%d,%d,%d,%lX",
-#else // defined(linux)
+#elif defined(USE_LL_FOR_64BIT)
+      sprintf_s(buffer, sizeof(buffer), "%d,%d,%d,%d,%d,%d,%llX",
+#else // !defined(USE_L_FOR_64BIT)
       sprintf_s(buffer, sizeof(buffer), "%d,%d,%d,%d,%d,%d,%I64X",
-#endif // defined(linux)
+#endif //!defined(USE_L_FOR_64BIT)
          auxEntry->wObjID_Input, auxEntry->eAuxType, auxEntry->wManuCode, auxEntry->wModelIdentCode,
          auxEntry->qPrefAssign, auxEntry->bFuncAttribute, name);
       setString(section, key, buffer);
@@ -310,11 +313,13 @@ static bool getValue(const VT_AUXAPP_T& auxEntry, char* value, size_t size)
 {
     uint64_t name = 0;
     memcpy(&name, &auxEntry.baAuxName[0], 8);            /* ISO name of the auxiliary input device. The bytes must be set to 0xFF if not used. */
-#if defined(linux)
+#if defined(USE_L_FOR_64BIT)
     sprintf_s(value, size, "%d,%d,%d,%d,%d,%d,%lX",
-#else // defined(linux)
+#elif defined(USE_LL_FOR_64BIT)
+    sprintf_s(value, size, "%d,%d,%d,%d,%d,%d,%llX",
+#else // !defined(USE_L_FOR_64BIT)
     sprintf_s(value, size, "%d,%d,%d,%d,%d,%d,%I64X",
-#endif // defined(linux)
+#endif // !defined(USE_L_FOR_64BIT)
         auxEntry.wObjID_Input, auxEntry.eAuxType, auxEntry.wManuCode, auxEntry.wModelIdentCode,
         auxEntry.qPrefAssign, auxEntry.bFuncAttribute, name);
     return true;

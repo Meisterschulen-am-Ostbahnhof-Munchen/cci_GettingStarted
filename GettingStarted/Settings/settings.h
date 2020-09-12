@@ -10,9 +10,7 @@
 #define DEF_SETTINGS_H
 
 #include <stdint.h>
-#if defined(linux)
 #include <stdlib.h>   // required for 'size_t'
-#endif // defined(linux)
 
 #ifdef __cplusplus
 extern "C" {

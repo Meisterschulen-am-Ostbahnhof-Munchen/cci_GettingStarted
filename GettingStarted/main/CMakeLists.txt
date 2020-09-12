@@ -14,6 +14,7 @@ set(COMPONENT_SRCS
   "../AppIso/App_VTClientLev2.c"
   "../AppIso/AppMemAccess.cpp"
   "../AppCommon/AppOutput.c"
+  "../Samples/AddOn/AppIso_Output.c"
 )
 
 set(COMPONENT_ADD_INCLUDEDIRS 
