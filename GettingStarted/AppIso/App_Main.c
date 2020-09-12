@@ -35,7 +35,7 @@
 /* **************************  function declarations  *********************** */
 
 
-int_t main(void);
+
 
 void AppHW_Init(void);
 void AppIso_Init(void);
@@ -64,7 +64,7 @@ static void Do_ReceiveCanMessages(void);
 
 /* ************************************************************************ */
 /*! \brief Sample main function */
-int_t main(void)
+void app_main(void)
 {
    hw_DebugPrint("ISO Application starts \n");
    /* Initialize application */
@@ -97,7 +97,7 @@ int_t main(void)
 
    hw_Shutdown();
 
-   return 0;
+   return;
 }
 
 /* **************************  implementation - public functions  ********* */
