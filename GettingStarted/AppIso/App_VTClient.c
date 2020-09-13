@@ -186,6 +186,14 @@ static void AppVTClientDoProcess( void )
 
 }
 
+
+#if defined(ESP_PLATFORM)
+static const char *POOL_FILENAME = "spiffs/pools/pool.iop";
+#else
+static const char *POOL_FILENAME = "pools/pool.iop";
+#endif // defined(ESP_PLATFORM)
+
+
 /* ************************************************************************ */
 static void AppPoolSettings( iso_u8 u8Instance )
 {
@@ -193,7 +201,7 @@ static void AppPoolSettings( iso_u8 u8Instance )
    static iso_u32  u32PoolSize = 0UL;
    static iso_u16  u16NumberObjects;
    
-	u32PoolSize = LoadPoolFromFile("pools/pool.iop", &pu8PoolData);
+	u32PoolSize = LoadPoolFromFile(POOL_FILENAME, &pu8PoolData);
 
 #if defined(linux)
 	if ((u32PoolSize == 0) || (pu8PoolData == 0))

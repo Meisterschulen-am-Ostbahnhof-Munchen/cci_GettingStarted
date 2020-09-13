@@ -11,6 +11,17 @@
 #include <string.h>
 #include "Settings/settings.h"
 #include "AppMemAccess.h"
+
+#if defined(ESP_PLATFORM)
+#include <sys/param.h>
+#include "esp_err.h"
+#include "esp_log.h"
+#include "esp_spiffs.h"
+
+static const char *TAG = "AppMemAccess";
+
+#endif // def ESP_PLATFORM
+
 using namespace std;
 
 #if defined(_MSC_VER )
@@ -31,6 +42,9 @@ using namespace std;
 #define USE_LL_FOR_64BIT
 #else // defined(linux), defined(__MINGW_GCC_VERSION)
 #endif // defined(linux), defined(__MINGW_GCC_VERSION)
+#if defined(ESP_PLATFORM)
+   #define USE_LL_FOR_64BIT
+#endif // def ESP_PLATFORM
 
 static bool parseAuxEntry(char* entry, VT_AUXAPP_T* auxEntry);
 static bool getKey(const VT_AUXAPP_T& auxEntry, char* key, size_t size);
@@ -38,28 +52,78 @@ static bool getValue(const VT_AUXAPP_T& auxEntry, char* value, size_t size);
 
 /* ****************   Object pool access   *********************************** */
 
+
+#if defined(ESP_PLATFORM)
+static esp_err_t register_vfs()
+{
+    ESP_LOGI(TAG, "Initializing SPIFFS");
+
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = false
+    };
+
+    // Use settings defined above to initialize and mount SPIFFS filesystem.
+    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+
+    if (ret != ESP_OK) {
+        if (ret == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+        } else if (ret == ESP_ERR_NOT_FOUND) {
+            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+        } else {
+            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+        }
+    }
+
+    size_t total = 0, used = 0;
+    ret = esp_spiffs_info(conf.partition_label, &total, &used);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+    } else {
+        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+    }
+
+    return ret;
+}
+#endif // def ESP_PLATFORM
+
+
 iso_u32 LoadPoolFromFile(const char * pcFilename, iso_u8 ** pPoolBuff)
 {
-   /* load pool from file into RAM */
-   FILE *pFile;
-   iso_u32 u32PoolSize = 0;
 
-   if (*pPoolBuff)
-   {   /* free the pool data RAM */
-      free(*pPoolBuff);
-      *pPoolBuff = 0;
-   }
+	   /* load pool from file into RAM */
+	   FILE *pFile;
+	   iso_u32 u32PoolSize = 0;
 
-   pFile = fopen(pcFilename, "rb");
-   if (pFile)
-   {
-      fseek(pFile, 0L, SEEK_END);
-      u32PoolSize = static_cast<iso_u32>(ftell(pFile));
-      *pPoolBuff = reinterpret_cast<iso_u8*>(malloc(u32PoolSize));
-      fseek(pFile, 0L, SEEK_SET);
-      u32PoolSize = (iso_u32)fread(*pPoolBuff, sizeof(iso_u8), u32PoolSize, pFile);
-      fclose(pFile);
-   }
+
+#if defined(ESP_PLATFORM)
+    if ( register_vfs() == ESP_OK ) {
+#endif // def ESP_PLATFORM
+
+	   if (*pPoolBuff)
+	   {   /* free the pool data RAM */
+		  free(*pPoolBuff);
+		  *pPoolBuff = 0;
+	   }
+
+	   pFile = fopen(pcFilename, "rb");
+	   if (pFile)
+	   {
+		  fseek(pFile, 0L, SEEK_END);
+		  u32PoolSize = static_cast<iso_u32>(ftell(pFile));
+		  *pPoolBuff = reinterpret_cast<iso_u8*>(malloc(u32PoolSize));
+		  fseek(pFile, 0L, SEEK_SET);
+		  u32PoolSize = (iso_u32)fread(*pPoolBuff, sizeof(iso_u8), u32PoolSize, pFile);
+		  fclose(pFile);
+	   }
+
+#if defined(ESP_PLATFORM)
+    }
+#endif // def ESP_PLATFORM
+
    return u32PoolSize;
 }
 
@@ -204,9 +268,7 @@ int getAuxAssignment(const char auxSection[], VT_AUXAPP_T asAuxAss[])
 
    return (int)idxAux;
 }
-#ifdef ESP_PLATFORM
-   #define USE_LL_FOR_64BIT
-#endif // def ESP_PLATFORM
+
 
 bool parseAuxEntry(char* entry, VT_AUXAPP_T* auxEntry)
 {
