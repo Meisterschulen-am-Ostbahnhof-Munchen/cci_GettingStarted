@@ -188,7 +188,7 @@ static void AppVTClientDoProcess( void )
 
 
 #if defined(ESP_PLATFORM)
-static const char *POOL_FILENAME = "spiffs/pools/pool.iop";
+static const char *POOL_FILENAME = "/spiffs/pools/pool.iop";
 #else
 static const char *POOL_FILENAME = "pools/pool.iop";
 #endif // defined(ESP_PLATFORM)
@@ -438,7 +438,7 @@ iso_s16 VTC_PoolReload(void)
    static iso_u32  u32PoolSize = 0UL;
    static iso_u16  u16NumberObjects;
 
-   u32PoolSize = LoadPoolFromFile("pools/pool.iop", &pu8PoolData);
+   u32PoolSize = LoadPoolFromFile(POOL_FILENAME, &pu8PoolData);
    u16NumberObjects = IsoGetNumofPoolObjs(pu8PoolData, (iso_s32)u32PoolSize);
    if (IsoVtcPoolReload(u8_CfVtInstance, pu8PoolData, u16NumberObjects))
    {

@@ -109,7 +109,11 @@ iso_u32 LoadPoolFromFile(const char * pcFilename, iso_u8 ** pPoolBuff)
 		  *pPoolBuff = 0;
 	   }
 
+	   ESP_LOGI(TAG, "Opening file");
 	   pFile = fopen(pcFilename, "rb");
+	   if (pFile == NULL) {
+	      ESP_LOGE(TAG, "Failed to open file for reading");
+	   }
 	   if (pFile)
 	   {
 		  fseek(pFile, 0L, SEEK_END);
@@ -121,6 +125,7 @@ iso_u32 LoadPoolFromFile(const char * pcFilename, iso_u8 ** pPoolBuff)
 	   }
 
 #if defined(ESP_PLATFORM)
+       ESP_LOGI(TAG, "Pool size: %d, file: %s", u32PoolSize, pcFilename);
     }
 #endif // def ESP_PLATFORM
 
