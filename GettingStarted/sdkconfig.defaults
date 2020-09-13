@@ -1,3 +1,10 @@
+#
+# Partition Table
+#
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_example.csv"
 CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"
+#
+# FreeRTOS
+#
+CONFIG_FREERTOS_HZ=200
