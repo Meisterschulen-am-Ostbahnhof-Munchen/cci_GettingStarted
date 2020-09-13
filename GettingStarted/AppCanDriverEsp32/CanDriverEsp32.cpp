@@ -132,6 +132,7 @@ int16_t  hw_CanGetFreeSendMsgBufferSize(uint8_t canNode_u8)
 
 static void HW_CanMsgPrint(uint8_t canNode_u8, can_message_t* can_msg_ps, uint8_t isRX)
 {
+   return; //disable CANPrint.
    const char_t *pcMsgTxt;
    const char_t *pcRxTx;
    /* printf hw_DebugPrint hw_DebugTrace */
