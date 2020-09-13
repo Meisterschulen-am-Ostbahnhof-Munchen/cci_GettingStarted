@@ -21,6 +21,13 @@
 #include <stdio.h>
 #include "AppHW.h"
 
+#ifdef ESP_PLATFORM
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "sdkconfig.h"
+#endif  //ESP_PLATFORM
+
+
 #ifdef _WIN32
 
 
@@ -89,11 +96,11 @@ BOOL WINAPI ConsoleHandler(DWORD CEvent)
 }
 #endif  //_WIN32
 
-#if 1
+#if defined(linux) || defined(ESP_PLATFORM)
 #include <stdlib.h>     //used for clearing the screen
 #include <time.h>       //used to get time for random number generator
 #include <unistd.h>
-#endif // 0
+#endif // defined(linux) || defined(ESP_PLATFORM)
 
 /* ************************************************************************ */
 
@@ -386,6 +393,9 @@ void hw_SimDoSleep(uint32_t milliseconds)
 #ifdef linux
    usleep(milliseconds * 1000);
 #endif // def _WIN32
+#ifdef ESP_PLATFORM
+   vTaskDelay(milliseconds / portTICK_PERIOD_MS);
+#endif // def ESP_PLATFORM
 }
 
 /* ************************************************************************ */

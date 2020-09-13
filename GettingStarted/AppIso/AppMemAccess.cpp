@@ -16,14 +16,14 @@ using namespace std;
 #if defined(_MSC_VER )
 #pragma warning(disable : 4996)
 #endif // defined(_MSC_VER )
-#if 1
+#if defined(linux) || defined(ESP_PLATFORM)
 #define vswprintf_s swprintf
 #define vsprintf_s snprintf
 #define _strtoui64 strtoull
 #define vswprintf_s swprintf
 #define vsprintf_s snprintf
 #define sprintf_s snprintf
-#endif // 1
+#endif // defined(linux) || defined(ESP_PLATFORM)
 
 #if defined(linux)
 #define USE_L_FOR_64BIT
@@ -204,8 +204,10 @@ int getAuxAssignment(const char auxSection[], VT_AUXAPP_T asAuxAss[])
 
    return (int)idxAux;
 }
+#ifdef ESP_PLATFORM
+   #define USE_LL_FOR_64BIT
+#endif // def ESP_PLATFORM
 
-#define USE_LL_FOR_64BIT
 bool parseAuxEntry(char* entry, VT_AUXAPP_T* auxEntry)
 {
     int wObjID_Fun;
