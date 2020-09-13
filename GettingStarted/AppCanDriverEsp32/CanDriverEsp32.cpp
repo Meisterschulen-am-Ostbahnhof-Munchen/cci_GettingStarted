@@ -21,7 +21,22 @@
 #include <stdio.h>
 #include "AppHW.h"
 #include "driver/can.h"
+#include "esp_err.h"
+#include "esp_log.h"
+
+#define USE_APP_OUTPUT
+#if defined(USE_APP_OUTPUT)
+   #include "AppOutput.h"
+#endif /* defined(USE_APP_OUTPUT) */
+
 /* ************************************************************************ */
+
+static void HW_CanMsgPrint(uint8_t canNode_u8, can_message_t* can_msg_ps, uint8_t isRX);
+
+
+#define CANBUS_TAG              "CAN Master"
+#define TX_GPIO_NUM             21
+#define RX_GPIO_NUM             22
 
 static const can_timing_config_t t_config = CAN_TIMING_CONFIG_250KBITS();
 static const can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
@@ -64,12 +79,6 @@ int16_t hw_CanSendMsg(uint8_t canNode_u8, uint32_t canId_u32, const uint8_t canD
    can_message_t can_msg_send;
    int16_t  ret_16 = 0;
    int iLoop = 0;
-   int  channelID;
-
-   if (pCANDriver == 0)
-   {
-      return -9;  /* E_COM -> Bus off*/
-   }
 
    can_msg_send.identifier = canId_u32;
    can_msg_send.data_length_code = canDataLength_u8;
@@ -78,11 +87,10 @@ int16_t hw_CanSendMsg(uint8_t canNode_u8, uint32_t canId_u32, const uint8_t canD
    for (iLoop = 0; (iLoop < 8) && (iLoop < canDataLength_u8); iLoop++)
       can_msg_send.data[iLoop] = canData_au8[iLoop];
 
-   channelID = 1 + canNode_u8;
    
 
    
-   if (can_transmit(&can_msg_send, pdMS_TO_TICKS(1) == ESP_OK)
+   if (can_transmit(&can_msg_send, pdMS_TO_TICKS(1)) == ESP_OK)
    {
        HW_CanMsgPrint(canNode_u8, &can_msg_send, 0u);
    }
@@ -97,11 +105,9 @@ int16_t hw_CanSendMsg(uint8_t canNode_u8, uint32_t canId_u32, const uint8_t canD
 int16_t hw_CanReadMsg(uint8_t canNode_u8, uint32_t *canId_pu32, uint8_t canData_pau8[], uint8_t *canDataLength_pu8)
 {
    can_message_t can_msg_read;
-   int      channelID;
 
 
 
-   channelID = 1 + canNode_u8;
    if (can_receive(&can_msg_read, pdMS_TO_TICKS(1)) == ESP_OK)
    {
       if (can_msg_read.identifier != 0xCCCCCCCCuL)
@@ -132,12 +138,12 @@ static void HW_CanMsgPrint(uint8_t canNode_u8, can_message_t* can_msg_ps, uint8_
    #define CAN_PRINT hw_DebugTrace
 
    pcRxTx = (isRX > 0u) ? "Rx" : "Tx";
-   CAN_PRINT("%2u %12d %2s %8x %1u ", canNode_u8, can_msg_ps->TimeStamp, pcRxTx, can_msg_ps->ID, can_msg_ps->DLC);
+   CAN_PRINT("%2u %2s %8x %1u ", canNode_u8, pcRxTx, can_msg_ps->identifier, can_msg_ps->data_length_code);
 
 #if defined(USE_APP_OUTPUT)
    {  // Get PGN and extra text if available
       uint32_t u32PGN;
-      u32PGN = (can_msg_ps->ID & 0x03FFFF00uL) >> 8u;
+      u32PGN = (can_msg_ps->identifier & 0x03FFFF00uL) >> 8u;
       if ((u32PGN & 0x00FF00uL) < PGN_PDU2_240_X)
       {  /* PDU 1 -> remove DA */
          u32PGN &= 0x03FF00uL;
@@ -146,17 +152,17 @@ static void HW_CanMsgPrint(uint8_t canNode_u8, can_message_t* can_msg_ps, uint8_
       switch (u32PGN)
       {
          case PGN_VTtoECU        : 
-         case PGN_ECUtoVT        : pcMsgTxt = VTSublistTextout(can_msg_ps->Data[0] ); break;
+         case PGN_ECUtoVT        : pcMsgTxt = VTSublistTextout(can_msg_ps->data[0] ); break;
          //case PGN_SCC_TO_SCM     : 
          //case PGN_SCM_TO_SCC     : pcMsgTxt = SCSublistTextout(can_msg_ps->Data[0] ); break;
-         case PGN_PROCESS_DATA   : pcMsgTxt = TCSublistTextout(can_msg_ps->Data[0] ); break;
-         case PGN_TP_DT          : pcMsgTxt = TPSublistTextout(can_msg_ps->Data[0], can_msg_ps->Data[1] ); break;
+         case PGN_PROCESS_DATA   : pcMsgTxt = TCSublistTextout(can_msg_ps->data[0] ); break;
+         case PGN_TP_DT          : pcMsgTxt = TPSublistTextout(can_msg_ps->data[0], can_msg_ps->data[1] ); break;
          //case PGN_FSC_TO_FS      : pcMsgTxt = FSCSublistTextout( PGN_FSC_TO_FS, can_msg_ps->Data );   break;
          //case PGN_FS_TO_FSC      : pcMsgTxt = FSCSublistTextout( PGN_FS_TO_FSC, can_msg_ps->Data );   break;
-         case PGN_ADDRESS_CLAIMED: pcMsgTxt = ACLSublistTextout(can_msg_ps->ID, &(can_msg_ps->Data) ); break;
+         case PGN_ADDRESS_CLAIMED: pcMsgTxt = ACLSublistTextout(can_msg_ps->identifier, &(can_msg_ps->data) ); break;
          case PGN_TP_CM          :
-         case PGN_ETP_CM         : pcMsgTxt = TPCMSublistTextOut(can_msg_ps->ID, can_msg_ps->Data); break;
-         case PGN_N_ACK          : pcMsgTxt = ACKSublistTextOut(can_msg_ps->ID, can_msg_ps->Data); break;
+         case PGN_ETP_CM         : pcMsgTxt = TPCMSublistTextOut(can_msg_ps->identifier, can_msg_ps->data); break;
+         case PGN_N_ACK          : pcMsgTxt = ACKSublistTextOut(can_msg_ps->identifier, can_msg_ps->data); break;
          case PGN_WORKING_SET_MEMBER: pcMsgTxt = "Working set member ";   break;
          case PGN_WORKING_SET_MASTER: pcMsgTxt = "Working set master ";   break;
          case PGN_LANGUAGE_COMMAND  : pcMsgTxt = "Language command ";     break;
@@ -169,19 +175,19 @@ static void HW_CanMsgPrint(uint8_t canNode_u8, can_message_t* can_msg_ps, uint8_
    pcMsgTxt = " ";
 #endif /* defined(USE_APP_OUTPUT) */ 
 
-   if (can_msg_ps->DLC == 0)
+   if (can_msg_ps->data_length_code == 0)
    {
       CAN_PRINT("  %s\n", pcMsgTxt);
    }
-   if (can_msg_ps->DLC == 3)
+   if (can_msg_ps->data_length_code == 3)
    {
-      CAN_PRINT("%2.2x %2.2x %2.2x  %s\n", can_msg_ps->Data[0], can_msg_ps->Data[1], can_msg_ps->Data[2], pcMsgTxt);
+      CAN_PRINT("%2.2x %2.2x %2.2x  %s\n", can_msg_ps->data[0], can_msg_ps->data[1], can_msg_ps->data[2], pcMsgTxt);
    }
    else
    {
       CAN_PRINT("%2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x  %s\n",
-         can_msg_ps->Data[0], can_msg_ps->Data[1], can_msg_ps->Data[2], can_msg_ps->Data[3],
-         can_msg_ps->Data[4], can_msg_ps->Data[5], can_msg_ps->Data[6], can_msg_ps->Data[7], pcMsgTxt);
+         can_msg_ps->data[0], can_msg_ps->data[1], can_msg_ps->data[2], can_msg_ps->data[3],
+         can_msg_ps->data[4], can_msg_ps->data[5], can_msg_ps->data[6], can_msg_ps->data[7], pcMsgTxt);
    }
 }
 #endif // !defined(CCI_CAN_API)

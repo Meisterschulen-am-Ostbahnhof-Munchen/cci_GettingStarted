@@ -89,11 +89,11 @@ BOOL WINAPI ConsoleHandler(DWORD CEvent)
 }
 #endif  //_WIN32
 
-#ifdef linux
+#if 1
 #include <stdlib.h>     //used for clearing the screen
 #include <time.h>       //used to get time for random number generator
 #include <unistd.h>
-#endif // linux
+#endif // 0
 
 /* ************************************************************************ */
 

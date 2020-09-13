@@ -14,8 +14,10 @@ set(COMPONENT_SRCS
   "../AppIso/App_VTClientLev2.c"
   "../AppIso/AppMemAccess.cpp"
   "../AppCommon/AppOutput.c"
+  "../AppCommon/AppHW.cpp"
   "../Samples/AddOn/AppIso_Output.c"
   "../Settings/settingsNVS.cpp"
+  "../AppCanDriverEsp32/CanDriverEsp32.cpp"
 )
 
 set(COMPONENT_ADD_INCLUDEDIRS 
