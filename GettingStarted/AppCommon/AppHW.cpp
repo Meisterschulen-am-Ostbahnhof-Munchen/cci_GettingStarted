@@ -394,7 +394,7 @@ void hw_SimDoSleep(uint32_t milliseconds)
    usleep(milliseconds * 1000);
 #endif // def _WIN32
 #ifdef ESP_PLATFORM
-   vTaskDelay(milliseconds / portTICK_PERIOD_MS);
+   vTaskDelay(milliseconds / portTICK_PERIOD_MS); // 200HZ FreeRTOS Taskrate need for 5ms Sleep.
 #endif // def ESP_PLATFORM
 }
 
